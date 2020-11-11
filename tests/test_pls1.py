@@ -100,11 +100,11 @@ def test_compare_reference(pls1ref, pls1cached):
     if refdat is None:
         dump_res(rname, res)
         assert False, "Missing reference data for {}, data is dumped".format(rname)
-    elif rname == 'Y_corrLoadings' or rname == 'Y_loadings':
+    elif rname in ['Y_corrLoadings', 'Y_loadings']:
         if not np.allclose(res[:3], refdat.reshape(1, -1)[:3], rtol=rtol, atol=atol):
             dump_res(rname, res)
-            assert False, "Difference in {}, data is dumped".format(rname)    
-    elif rname == 'X_cumCalExplVar' or rname == 'Y_cumCalExplVar':
+            assert False, "Difference in {}, data is dumped".format(rname)
+    elif rname in ['X_cumCalExplVar', 'Y_cumCalExplVar']:
         if not np.allclose(np.array(res[:3]), refdat[:3], rtol=rtol, atol=atol):
             dump_res(rname, res)
             assert False, "Difference in {}, data is dumped".format(rname)

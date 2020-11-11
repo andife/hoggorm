@@ -39,9 +39,7 @@ def ortho(arr1, arr2):
     term1 = numpy.linalg.inv(numpy.dot(arr2_T, arr2))
     term2 = numpy.dot(arr2, term1)
     term3 = numpy.dot(term2, arr2_T)
-    arr1_orth = numpy.dot((I - term3), arr1)
-
-    return arr1_orth
+    return numpy.dot((I - term3), arr1)
 
 
 

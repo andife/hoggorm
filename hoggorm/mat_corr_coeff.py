@@ -240,19 +240,12 @@ class SMI:
     def __init__(self, X1, X2, **kargs):
         # Check dimensions
         assert numpy.shape(X1)[0] == numpy.shape(X2)[0], ValueError('Number of objects must be equal in X1 and X2')
-        
+
         # Check number of components against rank
         rank1 = st.matrixRank(X1)
         rank2 = st.matrixRank(X2)
-        if 'ncomp1' not in kargs.keys():
-            self.ncomp1 = rank1
-        else:
-            self.ncomp1 = kargs['ncomp1']
-
-        if 'ncomp2' not in kargs.keys():
-            self.ncomp2 = rank2
-        else:
-            self.ncomp2 = kargs['ncomp2']
+        self.ncomp1 = rank1 if 'ncomp1' not in kargs.keys() else kargs['ncomp1']
+        self.ncomp2 = rank2 if 'ncomp2' not in kargs.keys() else kargs['ncomp2']
         assert self.ncomp1 <= rank1, ValueError('Number of components for X1 cannot be higher than the rank of X1')
         assert self.ncomp2 <= rank2, ValueError('Number of components for X2 cannot be higher than the rank of X2')
 
@@ -261,9 +254,9 @@ class SMI:
             self.projection = 'Orthogonal'
         else:
             self.projection = kargs['projection']
-        
+
         assert self.projection in ['Orthogonal','Procrustes'], ValueError('Unknown projection, should be Orthogonal or Procrustes')
-        
+
         # Calculate scores if needed
         if 'Scores1' not in kargs.keys():
             Scores1, s, V = numpy.linalg.svd(X1 - numpy.mean(X1, axis=0),0)
@@ -273,7 +266,7 @@ class SMI:
             Scores2, s, V = numpy.linalg.svd(X2 - numpy.mean(X2, axis=0),0)
         else:
             Scores2 = kargs['Scores2']
-            
+
         # Compute SMI values
         if self.projection == 'Orthogonal':
             self.smi = numpy.cumsum(numpy.cumsum(numpy.square(numpy.dot(numpy.transpose(Scores1[:,:self.ncomp1]), Scores2[:,:self.ncomp2])),axis=1),axis=0) \
@@ -286,10 +279,11 @@ class SMI:
                 for q in range(self.ncomp2):
                     U, s, V = numpy.linalg.svd(TU[:p+1,:q+1])
                     self.smi[p,q] = numpy.square(numpy.mean(s))
-        
+
         # Recover wrong calculations (due to numerics)
-        self.smi[self.smi > 1] = 1; self.smi[self.smi < 0] = 0
-           
+        self.smi[self.smi > 1] = 1
+        self.smi[self.smi < 0] = 0
+
         self.N = numpy.shape(Scores1)[0]
         self.Scores1 = Scores1
         self.Scores2 = Scores2
@@ -315,17 +309,14 @@ class SMI:
         -------
         An array containing P-values for all combinations of components.
         """
-        if 'B' not in kargs.keys():
-            B = 10000
-        else:
-            B = kargs['B']
+        B = 10000 if 'B' not in kargs.keys() else kargs['B']
         P = numpy.zeros([self.ncomp1, self.ncomp2])
-        
+
+        i = 0
         if self.projection == 'Orthogonal':
             m = (numpy.reshape(numpy.min(numpy.vstack([numpy.tile(range(self.ncomp1),self.ncomp1),numpy.repeat(range(self.ncomp2),self.ncomp2)]),0), [self.ncomp1,self.ncomp2]) + 1)
             if 'replicates' not in kargs.keys():
                 BScores1 = self.Scores1.copy()
-                i = 0
                 while i < B:
                     numpy.random.shuffle(BScores1)
                     smiB = numpy.cumsum(numpy.cumsum(numpy.square(numpy.dot(numpy.transpose(BScores1[:,:self.ncomp1]), self.Scores2[:,:self.ncomp2])),axis=1),axis=0) / m
@@ -336,7 +327,6 @@ class SMI:
                 # With replicates
                 AScores1 = self.Scores1.copy()
                 BScores1 = self.Scores1.copy()
-                i = 0
                 replicates = kargs['replicates']
                 uni = numpy.unique(replicates, return_inverse=True)
                 vecOut = numpy.array(range(numpy.shape(uni[0])[0]))
@@ -352,11 +342,10 @@ class SMI:
                     # Increase P-value if non-significant permutation
                     P[self.smi > numpy.maximum(smiB,1-smiB)] += 1
                     i += 1
-                
+
         else:
             if 'replicates' not in kargs.keys():
                 BScores1 = self.Scores1.copy()
-                i = 0
                 smiB = numpy.zeros([self.ncomp1, self.ncomp2])
                 while i < B:
                     numpy.random.shuffle(BScores1) # Permutation of rows
@@ -372,7 +361,6 @@ class SMI:
                 # With replicates
                 AScores1 = self.Scores1.copy()
                 BScores1 = self.Scores1.copy()
-                i = 0
                 smiB = numpy.zeros([self.ncomp1, self.ncomp2])
                 replicates = kargs['replicates']
                 uni = numpy.unique(replicates, return_inverse=True)
@@ -393,5 +381,5 @@ class SMI:
                     # Increase P-value if non-significant permutation
                     P[self.smi > numpy.maximum(smiB,1-smiB)] += 1
                     i += 1                
-            
+
         return P / B

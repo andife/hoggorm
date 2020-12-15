@@ -1111,7 +1111,7 @@ class nipalsPLS1:
 
     def X_scores_predict(self, Xnew, numComp=None):
         """
-        Returns array of X scores from new X data using the exsisting model.
+        Returns array of X scores from new X data using the existing model.
         Rows represent objects and columns represent components.
         """
 
